@@ -82,7 +82,7 @@ class Kinematic:
         return J
 
     @staticmethod
-    def _damped_least_square(f, x_des, theta, lam=0.1, nu=10, step_sz=0.1, max_iter=1000, tol=1e-5, verbose=False):
+    def _damped_least_square(f, x_des, theta, lam=0.1, nu=10, step_sz=1, max_iter=1000, tol=1e-5, verbose=False):
         N = theta.shape[0]
 
         x = f(theta)
@@ -92,11 +92,10 @@ class Kinematic:
             if prv_err < tol:
                 break
 
-            # J = jacobian(f, theta).df
             J = Kinematic._central_difference_jacobian(f, theta)
             a = J.T @ J + (lam ** 2) * np.eye(J.shape[1])
             b = J.T @ dx
-            d_theta = np.linalg.solve(a, b)
+            d_theta = np.linalg.inv(a) @ b
 
             cur_theta = theta + step_sz * d_theta
             cur_x = f(cur_theta)
@@ -141,6 +140,8 @@ if __name__ == "__main__":
 
     theta = np.deg2rad([30, -30])
     x_des = np.array([42, 0, 0])
+    print(f"desired end-effector point {x_des}, and current theta {np.rad2deg(theta)}")
+
     x, theta = km.inverse(x_des, theta)
     print(f"estimated theta {theta}(rad), {np.rad2deg(theta)}(deg) at end-effector point at: {x}")
     print(f"error: {np.linalg.norm(x_des - x)}")
